@@ -1,0 +1,35 @@
+# docker-compose.yml (이 파일을 Git 저장소에 커밋하세요)
+version: '3.8'
+
+services:
+  # 백엔드 애플리케이션 서비스 정의
+  backend-app:
+    # ★★★ 중요: Jenkins가 빌드/푸시한 이미지 이름 사용. 태그는 .env 파일 통해 전달 ★★★
+    image: do2soon/soda:${BUILD_TAG:-latest}
+    container_name: soda-backend # 컨테이너 이름 변경 (기존 'soda'와 구분하기 위해)
+    ports:
+      - "8085:8080" # 기존과 동일한 포트 매핑
+    env_file: # ★★★ .env 파일의 환경 변수를 로드하도록 명시 ★★★
+      - .env
+    networks:
+      - soda-network
+    # depends_on: # Redis가 먼저 준비되도록 하려면 주석 해제
+    #   - redis
+
+  # Redis 서비스 정의
+  redis:
+    image: redis:alpine # redis:latest 사용해도 무방
+    container_name: soda-redis  # 컨테이너 이름 변경 (기존 'redis-container'와 구분)
+    ports: # 외부(호스트)에서 직접 Redis 접속할 필요 없으면 이 줄은 삭제해도 됨
+      - "6379:6379"
+    volumes: # 데이터 영속성을 위한 볼륨 설정
+      - redis-data:/data
+    networks:
+      - soda-network
+
+volumes:
+  redis-data: # Redis 데이터 저장용 볼륨 정의
+
+networks:
+  soda-network: # 서비스들이 통신할 사용자 정의 네트워크 정의
+    driver: bridge
